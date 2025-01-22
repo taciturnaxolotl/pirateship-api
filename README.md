@@ -1,13 +1,5 @@
 # Pirateship API
 
-[![License](https://img.shields.io/npm/l/pirateship-api)](https://github.com/kcoderhtml/pirateship-api/blob/main/LICENSE)
-[![NPM Version](https://img.shields.io/npm/v/pirateship-api)](https://www.npmjs.com/package/pirateship-api)
-![GitHub repo size](https://img.shields.io/github/repo-size/kcoderhtml/grolf)
-![GitHub last commit](https://img.shields.io/github/last-commit/kcoderhtml/grolf)
-![Hours spent working on this](https://waka.hackclub.com/api/badge/krn/interval:any/project:pirateship-api)
----
-
-
 <img align="right" width="75" height="75" src="https://cdn.prod.website-files.com/6373a03c7d7cb73ba2df4f8e/63cebd814ad20b37f1293666_ARRrrrmoji%20Template%20168.png">
 
 An unoffical typed wrapper for the PirateShip API.
