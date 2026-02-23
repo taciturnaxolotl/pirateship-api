@@ -44,6 +44,7 @@ function buildRequestBody(options: ShippingOptions): object {
             weight: options.weight,
             dimensionX: options.dimensionX,
             dimensionY: options.dimensionY,
+            dimensionZ: options.dimensionZ,
             showUpsRatesWhen2x7Selected: options.showUpsRatesWhen2x7Selected,
         },
         query: `
@@ -117,6 +118,7 @@ const options: ShippingOptions = {
     weight: 14,
     dimensionX: 9,
     dimensionY: 10,
+    dimensionZ: 1,
     showUpsRatesWhen2x7Selected: true,
 }
 

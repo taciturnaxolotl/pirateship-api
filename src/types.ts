@@ -116,6 +116,10 @@ export interface ShippingOptions {
      */
     dimensionY: number
     /**
+     * Height of the package in inches
+     */
+    dimensionZ: number
+    /**
      * Whether to show UPS rates when 2x7 is selected.
      */
     showUpsRatesWhen2x7Selected: boolean
