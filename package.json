@@ -1,46 +1,46 @@
 {
-    "name": "pirateship-api",
-    "module": "index.ts",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "type": "module",
-    "version": "0.1.0",
-    "description": "An unoffical typed wrapper for the PirateShip API",
-    "scripts": {
-        "build": "bun build --target=node ./src/index.ts --outfile=dist/index.js && bun run build:declaration",
-        "build:declaration": "tsc --emitDeclarationOnly --project tsconfig.types.json",
-        "postbuild": "rimraf tsconfig.types.tsbuildinfo"
-    },
-    "devDependencies": {
-        "bun-types": "latest",
-        "prettier": "^3.0.3",
-        "rimraf": "^5.0.5",
-        "typescript": "^5.2.2"
-    },
-    "peerDependencies": {
-        "typescript": "^5.0.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/kcoderhtml/pirateship-api.git"
-    },
-    "keywords": [
-        "PirateShip",
-        "shipping",
-        "api",
-        "wrapper",
-        "typescript"
-    ],
-    "author": "Kieran Klukas",
-    "license": "MIT",
-    "files": [
-        "dist/*.js",
-        "dist/*.d.ts"
-    ],
-    "prettier": {
-        "trailingComma": "es5",
-        "tabWidth": 4,
-        "semi": false,
-        "singleQuote": true
-    }
+	"name": "pirateship-api",
+	"module": "dist/index.js",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"type": "module",
+	"version": "0.2.0",
+	"description": "An unoffical typed wrapper for the PirateShip API",
+	"scripts": {
+		"build": "bun build --target=node ./src/index.ts --outfile=dist/index.js && bun run build:declaration",
+		"build:declaration": "tsc --emitDeclarationOnly --project tsconfig.types.json",
+		"postbuild": "rimraf tsconfig.types.tsbuildinfo"
+	},
+	"devDependencies": {
+		"bun-types": "latest",
+		"prettier": "^3.0.3",
+		"rimraf": "^5.0.5",
+		"typescript": "^5.2.2"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/taciturnaxolotl/pirateship-api.git"
+	},
+	"keywords": [
+		"PirateShip",
+		"shipping",
+		"api",
+		"wrapper",
+		"typescript"
+	],
+	"author": "Kieran Klukas",
+	"license": "MIT",
+	"files": [
+		"dist/*.js",
+		"dist/*.d.ts"
+	],
+	"prettier": {
+		"trailingComma": "es5",
+		"tabWidth": 4,
+		"semi": false,
+		"singleQuote": true
+	}
 }

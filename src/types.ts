@@ -1,6 +1,35 @@
+/** Valid USPS package types for the unauthenticated rates endpoint. */
+// Note: UPS-specific types (Express Envelope, Express Box, Express Tube, Express Pak)
+// require authentication and are not available on this endpoint.
+export type PackageType =
+    | 'SoftEnvelope'
+    | 'Parcel'
+    | 'Irregular'
+    | 'FlatRateEnvelope'
+    | 'FlatRateLegalEnvelope'
+    | 'FlatRatePaddedEnvelope'
+    | 'SmallFlatRateBox'
+    | 'MediumFlatRateBox'
+    | 'LargeFlatRateBox'
+    | 'ExpressFlatRateEnvelope'
+    | 'ExpressFlatRateLegalEnvelope'
+    | 'ExpressFlatRatePaddedEnvelope'
+
+/** Valid mail class keys for rate queries. */
+export type MailClassKey =
+    | 'PriorityExpress'
+    | 'First'
+    | 'ParcelSelect'
+    | 'Priority'
+    | 'GroundAdvantage'
+    | 'MediaMail'
+
+/** Valid carrier keys. */
+export type CarrierKey = 'usps' | 'ups'
+
 export interface Rates {
-    errors: Error[]
-    data: Data
+    errors: RateError[]
+    data: Data | null
 }
 
 export interface Data {
@@ -13,10 +42,10 @@ export interface Rate {
     trackingDescription: string
     serviceDescription: string
     pricingDescription: string
-    cubicTier: null
-    mailClassKey: string
+    cubicTier: string | null
+    mailClassKey: MailClassKey
     mailClass: MailClass
-    packageTypeKey: string
+    packageTypeKey: PackageType
     zone: string
     surcharges: Surcharge[]
     carrier: Carrier
@@ -40,7 +69,7 @@ export interface Carrier {
 }
 
 export interface MailClass {
-    accuracy: null
+    accuracy: string | null
     international: boolean
     __typename: string
 }
@@ -51,7 +80,7 @@ export interface Surcharge {
     __typename: string
 }
 
-export interface Error {
+export interface RateError {
     message: string
     locations: Location[]
     path: string[]
@@ -78,49 +107,53 @@ export interface ShippingOptions {
     /**
      * City of the origin.
      */
-    originCity: string
+    originCity?: string
     /**
      * State code of the origin.
      */
-    originRegionCode: string
+    originRegionCode?: string
     /**
      * Whether the origin is a residential address.
      */
-    isResidential: boolean
+    isResidential?: boolean
     /**
      * Zip code of the destination. Only required for US shipping.
      */
-    destinationZip: string
+    destinationZip?: string
     /**
-     * Country code of the destination. seems to follow https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+     * Country code of the destination. Follows https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
      */
-    destinationCountryCode: string
+    destinationCountryCode?: string
     /**
      * Array of mail class keys.
      */
-    mailClassKeys: string[]
+    mailClassKeys: MailClassKey[]
     /**
      * Array of package type keys.
      */
-    packageTypeKeys: string[]
+    packageTypeKeys: PackageType[]
     /**
-     * Weight of the package in ounces
+     * Weight of the package in ounces.
      */
-    weight: number
+    weight?: number
     /**
-     * Length of the package in inches
+     * Length of the package in inches.
      */
-    dimensionX: number
+    dimensionX?: number
     /**
-     * Width of the package in inches
+     * Width of the package in inches.
      */
-    dimensionY: number
+    dimensionY?: number
     /**
-     * Height of the package in inches
+     * Height of the package in inches.
      */
-    dimensionZ: number
+    dimensionZ?: number
     /**
      * Whether to show UPS rates when 2x7 is selected.
      */
-    showUpsRatesWhen2x7Selected: boolean
+    showUpsRatesWhen2x7Selected?: boolean
+    /**
+     * Pricing types to filter by.
+     */
+    pricingTypes?: string[]
 }
