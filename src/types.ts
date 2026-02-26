@@ -23,6 +23,9 @@ export type MailClassKey =
     | 'Priority'
     | 'GroundAdvantage'
     | 'MediaMail'
+    | 'FirstClassPackageInternationalService'
+    | 'PriorityMailInternational'
+    | 'PriorityMailExpressInternational'
 
 /** Valid carrier keys. */
 export type CarrierKey = 'usps' | 'ups'
