@@ -1,0 +1,6 @@
+dist
+*.tsbuildinfo
+.claude
+.crush
+# Hand-written examples; kept in the style they were written in.
+README.md

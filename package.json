@@ -1,51 +1,56 @@
 {
-	"name": "pirateship-api",
-	"module": "dist/index.js",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"type": "module",
-	"version": "0.3.0",
-	"description": "An unoffical typed wrapper for the PirateShip API",
-	"scripts": {
-		"build": "bun build --target=node ./src/index.ts --outfile=dist/index.js && bun run build:declaration",
-		"build:declaration": "tsc --emitDeclarationOnly --project tsconfig.types.json",
-		"postbuild": "rimraf tsconfig.types.tsbuildinfo",
-		"test": "bun test",
-		"sync-query": "bun scripts/sync-query.ts",
-		"probe": "bun scripts/probe.ts",
-		"check": "tsc --noEmit -p tsconfig.json && bun test && bun scripts/sync-query.ts --check"
-	},
-	"devDependencies": {
-		"bun-types": "latest",
-		"graphql": "^17.0.2",
-		"prettier": "^3.0.3",
-		"rimraf": "^5.0.5",
-		"typescript": "^5.2.2"
-	},
-	"peerDependencies": {
-		"typescript": "^5.0.0"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/taciturnaxolotl/pirateship-api.git"
-	},
-	"keywords": [
-		"PirateShip",
-		"shipping",
-		"api",
-		"wrapper",
-		"typescript"
-	],
-	"author": "Kieran Klukas",
-	"license": "MIT",
-	"files": [
-		"dist/*.js",
-		"dist/*.d.ts"
-	],
-	"prettier": {
-		"trailingComma": "es5",
-		"tabWidth": 4,
-		"semi": false,
-		"singleQuote": true
-	}
+    "name": "pirateship-api",
+    "module": "dist/index.js",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "type": "module",
+    "version": "0.3.0",
+    "description": "An unoffical typed wrapper for the PirateShip API",
+    "scripts": {
+        "build": "bun build --target=node ./src/index.ts --outfile=dist/index.js && bun run build:declaration",
+        "build:declaration": "tsc --emitDeclarationOnly --project tsconfig.types.json",
+        "postbuild": "rimraf tsconfig.types.tsbuildinfo",
+        "test": "bun test",
+        "sync-query": "bun scripts/sync-query.ts",
+        "probe": "bun scripts/probe.ts",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "lint": "oxlint --deny-warnings",
+        "typecheck": "tsc --noEmit -p tsconfig.json",
+        "check": "bun run format:check && bun run lint && bun run typecheck && bun test && bun scripts/sync-query.ts --check"
+    },
+    "devDependencies": {
+        "bun-types": "latest",
+        "graphql": "^17.0.2",
+        "oxlint": "^1.87.0",
+        "prettier": "^3.0.3",
+        "rimraf": "^5.0.5",
+        "typescript": "^5.2.2"
+    },
+    "peerDependencies": {
+        "typescript": "^5.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/taciturnaxolotl/pirateship-api.git"
+    },
+    "keywords": [
+        "PirateShip",
+        "shipping",
+        "api",
+        "wrapper",
+        "typescript"
+    ],
+    "author": "Kieran Klukas",
+    "license": "MIT",
+    "files": [
+        "dist/*.js",
+        "dist/*.d.ts"
+    ],
+    "prettier": {
+        "trailingComma": "es5",
+        "tabWidth": 4,
+        "semi": false,
+        "singleQuote": true
+    }
 }

@@ -1,0 +1,32 @@
+name: CI
+on:
+    push:
+        branches: [master]
+    pull_request:
+permissions:
+    contents: read
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        name: Format, lint, types, and tests
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: oven-sh/setup-bun@v2
+
+            - run: bun install --frozen-lockfile
+
+            - name: Format
+              run: bun run format:check
+
+            - name: Lint
+              run: bun run lint
+
+            - name: Types
+              run: bun run typecheck
+
+            - name: Tests
+              run: bun test
