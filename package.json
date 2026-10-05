@@ -4,7 +4,7 @@
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"type": "module",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "An unoffical typed wrapper for the PirateShip API",
 	"scripts": {
 		"build": "bun build --target=node ./src/index.ts --outfile=dist/index.js && bun run build:declaration",
