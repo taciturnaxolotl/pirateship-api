@@ -95,7 +95,7 @@ bun run probe               # check every service, package type, and value we li
 
 That query also limits what you can ask for: there's no insurance, ship date, or customs option, since their calculator doesn't send them.
 
-## Migrating from 0.2
+## Migrating from 0.1
 
 | Was | Now |
 | --- | --- |
