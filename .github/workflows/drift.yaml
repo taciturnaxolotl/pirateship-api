@@ -1,0 +1,35 @@
+name: API drift
+on:
+    schedule:
+        - cron: '0 14 * * 1'
+    workflow_dispatch:
+jobs:
+    drift:
+        runs-on: ubuntu-latest
+        name: Check the library against the live API
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v4
+
+            - uses: oven-sh/setup-bun@v2
+
+            - run: bun install --frozen-lockfile
+
+            - name: Types and tests
+              run: bunx tsc --noEmit -p tsconfig.json && bun test
+
+            - name: Rates query unchanged
+              run: bun run sync-query --check
+
+            # Exit 2 means the API could not be reached or challenged the runner,
+            # which is not drift, so it warns instead of failing the job.
+            - name: Values unchanged
+              run: |
+                  set +e
+                  bun run probe
+                  code=$?
+                  if [ "$code" -eq 2 ]; then
+                      echo "::warning::probe could not reach the API"
+                      exit 0
+                  fi
+                  exit "$code"

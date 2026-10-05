@@ -1,7 +1,6 @@
 {
     "compilerOptions": {
         "outDir": "./dist",
-        "rootDir": "./src",
         "baseUrl": "./",
         "paths": {
             "@/*": ["src/*"]
@@ -23,5 +22,5 @@
         "allowJs": true,
         "types": ["bun-types"]
     },
-    "include": ["src/**/*.ts"]
+    "include": ["src/**/*.ts", "scripts/**/*.ts"]
 }

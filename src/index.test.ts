@@ -7,7 +7,11 @@ import {
     stripFormatting,
     PirateShipHttpError,
     PirateShipNetworkError,
+    PirateShipQueryRetiredError,
     PirateShipRequestError,
+    isSaturdayDelivery,
+    RATES_QUERY,
+    RATES_QUERY_HASH,
     PirateShipValidationError,
     UpsDomesticService,
     UpsInternationalService,
@@ -48,10 +52,9 @@ const PRIORITY_RATE = {
     pricingSubType: 'default',
     ratePeriodId: 1,
     learnMoreUrl: 'https://www.pirateship.com/usps/priority-mail',
-    isGuaranteedDelivery: false,
-    isSaturdayDelivery: false,
     cheapest: true,
     fastest: false,
+    best: true,
     __typename: 'RateResult',
 } as unknown as Rate
 
@@ -87,20 +90,22 @@ describe('fetchShippingRates', () => {
     })
 
     test('a service that cannot be priced is returned, not thrown', async () => {
-        // Captured: UPS Standard requested against a US address.
+        // Captured: Priority and Ground Advantage restricted to weight pricing,
+        // where Ground Advantage's soft envelope rate is cubic-only.
         const quote = await fetchShippingRates({
             ...OPTIONS,
-            mailClassKeys: ['Priority', UpsInternationalService.Standard],
+            mailClassKeys: ['Priority', 'GroundAdvantage'],
+            pricingTypes: ['weight'],
             fetch: stubJson({
                 data: { rates: [PRIORITY_RATE] },
                 errors: [
                     {
-                        message: 'Could not get matching rate',
+                        message: 'Pricing type(s) weight not supported.',
                         extensions: {
                             rateError: {
-                                code: 2001,
-                                title: 'UPS® Standard',
-                                mailClassKey: '11',
+                                code: 2002,
+                                title: 'Ground Advantage',
+                                mailClassKey: 'GroundAdvantage',
                                 packageTypeKey: 'Parcel',
                             },
                         },
@@ -111,11 +116,11 @@ describe('fetchShippingRates', () => {
         expect(quote.rates).toHaveLength(1)
         expect(quote.unavailable).toEqual([
             {
-                mailClassKey: '11',
+                mailClassKey: 'GroundAdvantage',
                 packageTypeKey: 'Parcel',
-                code: 2001,
-                title: 'UPS® Standard',
-                reason: 'Could not get matching rate',
+                code: 2002,
+                title: 'Ground Advantage',
+                reason: 'Pricing type(s) weight not supported.',
             },
         ])
     })
@@ -141,19 +146,49 @@ describe('fetchShippingRates', () => {
     })
 
     test('an unrecognised API error throws with a null field', async () => {
-        // Captured after the endpoint was restricted to persisted queries.
         const call = fetchShippingRates({
             ...OPTIONS,
             fetch: stubJson({
-                errors: [
-                    { message: 'This server only executes persisted queries.' },
-                ],
+                errors: [{ message: 'Syntax Error: Expected Name, found {' }],
             }),
         })
         expect(call).rejects.toBeInstanceOf(PirateShipRequestError)
         await call.catch((error: PirateShipRequestError) => {
             expect(error.field).toBeNull()
         })
+    })
+
+    test('a hash the server no longer knows throws QueryRetired', async () => {
+        // Captured: what the endpoint says about an unregistered hash.
+        const call = fetchShippingRates({
+            ...OPTIONS,
+            fetch: stubJson({
+                errors: [
+                    {
+                        message: `Unknown persisted query id "${RATES_QUERY_HASH}".`,
+                    },
+                ],
+            }),
+        })
+        expect(call).rejects.toBeInstanceOf(PirateShipQueryRetiredError)
+        expect(call).rejects.toBeInstanceOf(PirateShipRequestError)
+    })
+
+    test('sends the pinned query by hash and never the query text', async () => {
+        let body: Record<string, any> = {}
+        await fetchShippingRates({
+            ...OPTIONS,
+            fetch: async (_url, init) => {
+                body = JSON.parse(String(init?.body))
+                return new Response(JSON.stringify({ data: { rates: [] } }))
+            },
+        })
+        expect(body.operationName).toBe('RatesQuery')
+        expect(body.extensions.persistedQuery).toEqual({
+            version: 1,
+            sha256Hash: RATES_QUERY_HASH,
+        })
+        expect(body).not.toHaveProperty('query')
     })
 
     test('a request-level error wins over any unavailable service', async () => {
@@ -266,6 +301,34 @@ describe('fetchShippingRates', () => {
         expect(sent).not.toHaveProperty('fetch')
         expect(sent).not.toHaveProperty('signal')
         expect(sent.originZip).toBe('43081')
+    })
+})
+
+describe('pinned query', () => {
+    test('the stored text hashes to the stored id', () => {
+        const hash = new Bun.CryptoHasher('sha256')
+            .update(RATES_QUERY)
+            .digest('hex')
+        expect(hash).toBe(RATES_QUERY_HASH)
+    })
+})
+
+describe('isSaturdayDelivery', () => {
+    // Captured: UPS Standard to Canada returns both of these under key '11'.
+    const weekday = {
+        surcharges: [
+            { title: 'UPS Temporary Service Continuity Fee', price: 0.5 },
+        ],
+    }
+    const saturday = {
+        surcharges: [
+            { title: 'UPS Temporary Service Continuity Fee', price: 0.5 },
+            { title: 'Saturday Delivery', price: 4 },
+        ],
+    }
+    test('tells the two rates under one key apart', () => {
+        expect(isSaturdayDelivery(weekday as never)).toBe(false)
+        expect(isSaturdayDelivery(saturday as never)).toBe(true)
     })
 })
 

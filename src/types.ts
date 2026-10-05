@@ -167,19 +167,6 @@ export const PriceBaseTypeKeys = [
 ] as const
 export type PriceBaseTypeKey = (typeof PriceBaseTypeKeys)[number]
 
-/** Customs contents declaration for international shipments. */
-export const ContentTypes = [
-    'Merchandise',
-    'Gift',
-    'Documents',
-    'Sample',
-    'ReturnedGoods',
-    'Other',
-    'HumanitarianDonation',
-    'DangerousGoods',
-] as const
-export type ContentType = (typeof ContentTypes)[number]
-
 /** Carriers this endpoint quotes. */
 export const CarrierKeys = ['usps', 'ups'] as const
 export type CarrierKey = (typeof CarrierKeys)[number]
@@ -207,12 +194,7 @@ export interface Surcharge {
 }
 
 export interface Rate {
-    /**
-     * Human-readable service name, e.g. `UPS Next Day Air®`.
-     *
-     * This is the only place a Saturday Delivery rate differs in text from its
-     * weekday counterpart; prefer `isSaturdayDelivery` to detect it.
-     */
+    /** Human-readable service name, e.g. `UPS Next Day Air®`. */
     title: string
     /** Delivery estimate. Contains BBCode, e.g. `in [b]6-10 days[/b]`. */
     deliveryDescription: string
@@ -223,7 +205,12 @@ export interface Rate {
     /** Pricing summary, e.g. `Commercial Pricing`. Plain text. */
     pricingDescription: string
     cubicTier: string | null
-    /** May carry a pricing variant suffix. See `splitMailClassKey`. */
+    /**
+     * May carry a pricing variant suffix. See `splitMailClassKey`.
+     *
+     * Not unique within a response: UPS quotes Saturday Delivery as a second
+     * rate under the same key. See `isSaturdayDelivery`.
+     */
     mailClassKey: ResponseMailClassKey
     mailClass: MailClass
     packageTypeKey: PackageType
@@ -239,17 +226,10 @@ export interface Rate {
     pricingSubType: PricingSubType
     ratePeriodId: number
     learnMoreUrl: string
-    isGuaranteedDelivery: boolean
-    /**
-     * Whether this is the Saturday Delivery variant of the service.
-     *
-     * A single requested service can return both a weekday and a Saturday rate
-     * under the same `mailClassKey`, so `mailClassKey` alone is not unique
-     * within a response. This flag is what tells them apart.
-     */
-    isSaturdayDelivery: boolean
     cheapest: boolean
     fastest: boolean
+    /** Pirate Ship's recommended pick among the rates for this package type. */
+    best: boolean
     __typename: 'RateResult'
 }
 
@@ -297,7 +277,7 @@ export interface RateQuote {
  * constraint.
  */
 export class PirateShipRequestError extends Error {
-    override readonly name = 'PirateShipRequestError'
+    override readonly name: string = 'PirateShipRequestError'
     /**
      * The parameter the API objected to, e.g. `destinationZip`, or `null` when
      * the rejection was not specific to one field.
@@ -306,6 +286,23 @@ export class PirateShipRequestError extends Error {
     constructor(message: string, field: string | null) {
         super(message)
         this.field = field
+    }
+}
+
+/**
+ * The API no longer recognises the query this version of the library sends.
+ *
+ * The endpoint only runs queries Pirate Ship's own site has registered, and
+ * this library sends theirs by hash. When they change it, every request fails
+ * this way until the library is updated.
+ */
+export class PirateShipQueryRetiredError extends PirateShipRequestError {
+    override readonly name = 'PirateShipQueryRetiredError'
+    constructor(message: string) {
+        super(
+            `${message} Pirate Ship has changed its rates query; update pirateship-api.`,
+            null
+        )
     }
 }
 
@@ -666,8 +663,6 @@ interface CommonShippingOptions {
     originRegionCode?: string | undefined
     /** Whether the origin is a residential address. */
     isResidential?: boolean | undefined
-    /** Whether the destination is a PO box. */
-    isPoBox?: boolean | undefined
     /** Package types to quote. */
     packageTypeKeys: PackageType[]
     /** Weight of the package in ounces. */
@@ -678,10 +673,6 @@ interface CommonShippingOptions {
     dimensionY?: number | undefined
     /** Height of the package in inches. Ignored for flat rate package types. */
     dimensionZ?: number | undefined
-    /** Declared value in dollars, which adds an insurance surcharge. */
-    insuredValue?: number | undefined
-    /** Ship date as `YYYY-MM-DD`. Other formats make the API error. */
-    shipDate?: string | undefined
     /**
      * Pricing models to quote.
      *
@@ -690,12 +681,6 @@ interface CommonShippingOptions {
      * weight rate until you ask for them by name.
      */
     pricingTypes?: PricingType[] | undefined
-    /**
-     * Price books to quote.
-     *
-     * Selects rather than filters, exactly like `pricingTypes`.
-     */
-    priceBaseTypeKeys?: PriceBaseTypeKey[] | undefined
     /** Whether to show UPS rates when a 2x7 label is selected. */
     showUpsRatesWhen2x7Selected?: boolean | undefined
     /** Aborts the in-flight request. */
@@ -709,8 +694,6 @@ export interface DomesticShippingOptions extends CommonShippingOptions {
     /** Zip code of the destination. */
     destinationZip: string
     destinationCountryCode?: 'US' | undefined
-    /** State code of the destination. */
-    destinationRegionCode?: string | undefined
     /** Services to quote. Only services that serve US destinations are allowed. */
     mailClassKeys: DomesticMailClassKey[]
 }
@@ -723,8 +706,6 @@ export interface InternationalShippingOptions extends CommonShippingOptions {
     destinationZip?: string | undefined
     /** Services to quote. Only services that ship internationally are allowed. */
     mailClassKeys: InternationalMailClassKey[]
-    /** Customs contents declaration. */
-    contentType?: ContentType | undefined
 }
 
 export type ShippingOptions =

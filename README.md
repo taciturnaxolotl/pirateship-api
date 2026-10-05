@@ -71,6 +71,7 @@ We have a few types of terminal errors that make it impossible to return anythin
 | --- | --- | --- |
 | `PirateShipValidationError` | Rejected before sending | `field` |
 | `PirateShipRequestError` | The API rejected the request | `field` |
+| `PirateShipQueryRetiredError` | Pirate Ship changed their rates query (see below) | |
 | `PirateShipHttpError` | Non-2xx response | `status`, `isChallenge`, `retryable` |
 | `PirateShipNetworkError` | DNS, socket, abort, bad body | `cause` |
 
@@ -79,6 +80,20 @@ You can also add a timeout via an abort signal:
 ```ts
 await fetchShippingRates({ ...options, signal: AbortSignal.timeout(10_000) });
 ```
+
+## Persisted queries
+
+Pirate Ship's API only runs queries their own site has registered, so this library sends their rates query by hash instead of its own. If they change that query every request throws `PirateShipQueryRetiredError` until it's updated.
+
+```bash
+bun run sync-query          # pull the current query from their site
+bun run sync-query --check  # exit 1 if it drifted (good for CI)
+bun run probe               # check every service, package type, and value we list is still current
+```
+
+`sync-query` prints what changed (variables and fields added or removed) and won't write a hash the API rejects. The type tests fail until `src/types.ts` matches the new query, so nothing goes stale quietly. A weekly workflow in `.github/workflows/drift.yaml` runs all of it.
+
+That query also limits what you can ask for: there's no insurance, ship date, or customs option, since their calculator doesn't send them.
 
 ## Migrating from 0.2
 
@@ -92,7 +107,7 @@ await fetchShippingRates({ ...options, signal: AbortSignal.timeout(10_000) });
 | `pricingTypes: string[]` | `pricingTypes: PricingType[]` |
 | Some types only lived in `types.ts` | Everything is exported from the root |
 
-This is a work in progress and the types are accurate as of `2026-09-24` but can't be guaranteed to be 100% correct as this is an undocumented internal API.
+This is a work in progress and the types are accurate as of `2026-10-05` but can't be guaranteed to be 100% correct as this is an undocumented internal API.
 
 <p align="center">
     <img src="https://raw.githubusercontent.com/taciturnaxolotl/carriage/main/.github/images/line-break.svg" />

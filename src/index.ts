@@ -2,6 +2,7 @@ import {
     FlatRatePackageTypes,
     PirateShipHttpError,
     PirateShipNetworkError,
+    PirateShipQueryRetiredError,
     PirateShipRequestError,
     PirateShipValidationError,
     RateVariants,
@@ -10,6 +11,7 @@ import {
     UspsDomesticMailClass,
     UspsInternationalMailClass,
 } from './types'
+import { RATES_QUERY_HASH, RATES_QUERY_VARIABLES } from './rates-query'
 import type {
     MailClassKey,
     PackageType,
@@ -22,6 +24,7 @@ import type {
 } from './types'
 
 export * from './types'
+export { RATES_QUERY, RATES_QUERY_HASH } from './rates-query'
 
 const ENDPOINT = 'https://ship.pirateship.com/api/graphql?opname=RatesQuery'
 
@@ -99,6 +102,19 @@ export function carrierOf(key: ResponseMailClassKey): 'usps' | 'ups' {
 }
 
 /**
+ * Whether a rate is the Saturday Delivery version of its service.
+ *
+ * UPS quotes Saturday Delivery as a second rate under the same `mailClassKey`
+ * as the weekday one. The response has no flag for it; the Saturday rate is the
+ * one carrying a `Saturday Delivery` surcharge.
+ */
+export function isSaturdayDelivery(rate: Pick<Rate, 'surcharges'>): boolean {
+    return rate.surcharges.some(
+        (surcharge) => surcharge.title === 'Saturday Delivery'
+    )
+}
+
+/**
  * Strip the BBCode the API embeds in its description fields.
  *
  * ```ts
@@ -157,65 +173,6 @@ function validate(options: ShippingOptions): void {
 /*                              Request and parse                             */
 /* -------------------------------------------------------------------------- */
 
-const RATE_FIELDS = `
-          title
-          deliveryDescription
-          trackingDescription
-          serviceDescription
-          pricingDescription
-          cubicTier
-          mailClassKey
-          mailClass { accuracy international __typename }
-          packageTypeKey
-          zone
-          surcharges { title price __typename }
-          carrier { carrierKey title __typename }
-          totalPrice
-          priceBaseTypeKey
-          basePrice
-          crossedTotalPrice
-          pricingType
-          pricingSubType
-          ratePeriodId
-          learnMoreUrl
-          isGuaranteedDelivery
-          isSaturdayDelivery
-          cheapest
-          fastest
-          __typename`
-
-const ARGUMENTS = [
-    ['originZip', 'String!'],
-    ['originCity', 'String'],
-    ['originRegionCode', 'String'],
-    ['destinationZip', 'String'],
-    ['destinationRegionCode', 'String'],
-    ['destinationCountryCode', 'String'],
-    ['isResidential', 'Boolean'],
-    ['isPoBox', 'Boolean'],
-    ['weight', 'Float'],
-    ['dimensionX', 'Float'],
-    ['dimensionY', 'Float'],
-    ['dimensionZ', 'Float'],
-    ['mailClassKeys', '[String!]!'],
-    ['packageTypeKeys', '[String!]!'],
-    ['pricingTypes', '[String!]'],
-    ['priceBaseTypeKeys', '[String!]'],
-    ['insuredValue', 'Float'],
-    ['contentType', 'String'],
-    ['shipDate', 'String'],
-    ['showUpsRatesWhen2x7Selected', 'Boolean'],
-] as const
-
-const QUERY = `query RatesQuery(${ARGUMENTS.map(
-    ([name, type]) => `$${name}: ${type}`
-).join(', ')}) {
-        rates(
-${ARGUMENTS.map(([name]) => `          ${name}: $${name}`).join('\n')}
-        ) {${RATE_FIELDS}
-        }
-      }`
-
 /** Shape of a raw GraphQL error entry from the response body. */
 interface GraphQlError {
     message?: string
@@ -243,6 +200,9 @@ function partitionErrors(raw: readonly GraphQlError[]): UnavailableService[] {
         const message = entry.message ?? 'The API reported an unspecified error'
         const rateError = entry.extensions?.rateError
         if (rateError === undefined) {
+            if (/persisted quer/i.test(message)) {
+                throw new PirateShipQueryRetiredError(message)
+            }
             throw new PirateShipRequestError(
                 message,
                 entry.extensions?.field ?? null
@@ -260,10 +220,11 @@ function partitionErrors(raw: readonly GraphQlError[]): UnavailableService[] {
 }
 
 function buildVariables(options: ShippingOptions): Record<string, unknown> {
-    const named = new Set<string>(ARGUMENTS.map(([name]) => name))
     const variables: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(options)) {
-        if (value !== undefined && named.has(key)) variables[key] = value
+        if (value !== undefined && RATES_QUERY_VARIABLES.has(key)) {
+            variables[key] = value
+        }
     }
     return variables
 }
@@ -271,11 +232,11 @@ function buildVariables(options: ShippingOptions): Record<string, unknown> {
 /**
  * Quote shipping rates.
  *
- * Services are priced independently, so a partial result is normal: inspect
- * `errors` to learn what any missing service failed on.
+ * Services are priced independently, so a partial result is normal: anything
+ * that could not be priced is listed in `unavailable` with the reason.
  *
  * ```ts
- * const { rates, errors } = await fetchShippingRates({
+ * const { rates, unavailable } = await fetchShippingRates({
  *     originZip: '43081',
  *     destinationZip: '90210',
  *     weight: 32,
@@ -286,6 +247,8 @@ function buildVariables(options: ShippingOptions): Record<string, unknown> {
  * ```
  *
  * @throws {PirateShipValidationError} An option was rejected before sending.
+ * @throws {PirateShipRequestError} The API rejected the request.
+ * @throws {PirateShipQueryRetiredError} Pirate Ship changed its rates query.
  * @throws {PirateShipHttpError} The API answered with a non-2xx status.
  * @throws {PirateShipNetworkError} The request never completed.
  */
@@ -303,7 +266,12 @@ export async function fetchShippingRates(
             body: JSON.stringify({
                 operationName: 'RatesQuery',
                 variables: buildVariables(options),
-                query: QUERY,
+                extensions: {
+                    persistedQuery: {
+                        version: 1,
+                        sha256Hash: RATES_QUERY_HASH,
+                    },
+                },
             }),
             ...(options.signal !== undefined && { signal: options.signal }),
         })

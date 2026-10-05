@@ -10,10 +10,14 @@
 		"build": "bun build --target=node ./src/index.ts --outfile=dist/index.js && bun run build:declaration",
 		"build:declaration": "tsc --emitDeclarationOnly --project tsconfig.types.json",
 		"postbuild": "rimraf tsconfig.types.tsbuildinfo",
-		"test": "bun test"
+		"test": "bun test",
+		"sync-query": "bun scripts/sync-query.ts",
+		"probe": "bun scripts/probe.ts",
+		"check": "tsc --noEmit -p tsconfig.json && bun test && bun scripts/sync-query.ts --check"
 	},
 	"devDependencies": {
 		"bun-types": "latest",
+		"graphql": "^17.0.2",
 		"prettier": "^3.0.3",
 		"rimraf": "^5.0.5",
 		"typescript": "^5.2.2"
