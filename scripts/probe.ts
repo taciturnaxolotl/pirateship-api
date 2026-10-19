@@ -252,17 +252,21 @@ async function checkReturnedValues() {
         }
     }
 
-    const lists: [keyof typeof seen, readonly string[]][] = [
-        ['packageTypeKey', PackageTypes],
-        ['pricingType', PricingTypes],
-        ['pricingSubType', PricingSubTypes],
-        ['priceBaseTypeKey', PriceBaseTypeKeys],
-        ['carrierKey', CarrierKeys],
+    // `open` lists are typed `KnownValue | string`, so a new value is news to
+    // add to the list, not a type that has gone wrong.
+    const lists: [keyof typeof seen, readonly string[], 'closed' | 'open'][] = [
+        ['packageTypeKey', PackageTypes, 'closed'],
+        ['pricingType', PricingTypes, 'closed'],
+        ['pricingSubType', PricingSubTypes, 'closed'],
+        ['priceBaseTypeKey', PriceBaseTypeKeys, 'open'],
+        ['carrierKey', CarrierKeys, 'closed'],
     ]
-    for (const [field, known] of lists) {
+    for (const [field, known, kind] of lists) {
         for (const value of seen[field]) {
-            if (!known.includes(value))
-                problems.add(`${field} '${value}' is not in the library`)
+            if (known.includes(value)) continue
+            if (kind === 'open')
+                notes.push(`new ${field} '${value}'; add it to the list`)
+            else problems.add(`${field} '${value}' is not in the library`)
         }
         // A rejected quote returns nothing, so "not returned" would be noise.
         if (rejectedQuotes > 0) continue
@@ -296,7 +300,10 @@ try {
     throw error
 }
 
-for (const note of notes) console.log(`note: ${note}`)
+// In Actions, notes become annotations on the run summary instead of
+// sitting unread in the log of a passing job.
+const notePrefix = process.env.GITHUB_ACTIONS ? '::notice::' : 'note: '
+for (const note of notes) console.log(`${notePrefix}${note}`)
 if (problems.size === 0) {
     console.log(`library matches the API (${requests} requests)`)
     process.exit(0)

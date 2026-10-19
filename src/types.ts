@@ -157,15 +157,25 @@ export type PricingType = (typeof PricingTypes)[number]
 export const PricingSubTypes = ['default', 'softpack'] as const
 export type PricingSubType = (typeof PricingSubTypes)[number]
 
-/** Price book a rate came from. Also accepted as a `priceBaseTypeKeys` selector. */
+/**
+ * Price books seen in responses so far.
+ *
+ * Not a complete list. Pirate Ship renames and adds books without notice, and
+ * some vary by route: in October 2026 `ecommerce` became `mrc_geo_a` or
+ * `mrc_geo_b` depending on origin, and Alaska and Hawaii origins get
+ * `commercial` instead.
+ */
 export const PriceBaseTypeKeys = [
     'commercial',
-    'ecommerce',
     'marketplace',
-    /** Returned rarely; was not reproducible on demand during testing. */
-    'retail',
+    'mrc_geo_a',
+    'mrc_geo_b',
 ] as const
-export type PriceBaseTypeKey = (typeof PriceBaseTypeKeys)[number]
+
+/** Price book a rate came from. Open-ended; see `PriceBaseTypeKeys`. */
+export type PriceBaseTypeKey =
+    | (typeof PriceBaseTypeKeys)[number]
+    | (string & {})
 
 /** Carriers this endpoint quotes. */
 export const CarrierKeys = ['usps', 'ups'] as const
