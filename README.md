@@ -4,16 +4,19 @@
 
 An unoffical typed wrapper for the PirateShip API.
 
+> [!IMPORTANT]
+> This package has moved to [`@taciturnaxolotl/pirateship-api`](https://www.npmjs.com/package/@taciturnaxolotl/pirateship-api). The unscoped [`pirateship-api`](https://www.npmjs.com/package/pirateship-api) is stuck at 0.1.0 on an account I can't get back into, and no longer works against Pirate Ship's API.
+
 ## Installation
 
 ```bash
-bun i pirateship-api
+bun i @taciturnaxolotl/pirateship-api
 ```
 
 ## Usage
 
 ```ts
-import { fetchShippingRates } from "pirateship-api";
+import { fetchShippingRates } from "@taciturnaxolotl/pirateship-api";
 
 const { rates } = await fetchShippingRates({
   originZip: "20001",
@@ -39,7 +42,7 @@ Priority Mail Express - USPS - $55.79
 Add UPS by its service code. (UPS codes are opaque numbers so we ship constants for them)
 
 ```ts
-import { fetchShippingRates, UpsDomesticService } from "pirateship-api";
+import { fetchShippingRates, UpsDomesticService } from "@taciturnaxolotl/pirateship-api";
 
 await fetchShippingRates({
   // ...

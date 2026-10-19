@@ -1,10 +1,10 @@
 {
-    "name": "pirateship-api",
+    "name": "@taciturnaxolotl/pirateship-api",
     "module": "dist/index.js",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "type": "module",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "An unoffical typed wrapper for the PirateShip API",
     "scripts": {
         "build": "bun build --target=node ./src/index.ts --outfile=dist/index.js && bun run build:declaration",
@@ -42,6 +42,9 @@
         "typescript"
     ],
     "author": "Kieran Klukas",
+    "publishConfig": {
+        "access": "public"
+    },
     "license": "MIT",
     "files": [
         "dist/*.js",
