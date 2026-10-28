@@ -1,14 +1,15 @@
 /**
  * Check the library's value lists against the live API.
  *
- * `bun run probe` makes four requests, about two seconds apart:
+ * `bun run probe` makes six requests, about two seconds apart:
  *
  * 1. One request listing every known and candidate key. The API names each
  *    invalid key in its own error, so a single call shows which keys we ship
  *    have been retired and which candidates have become valid.
- * 2. Three real quotes (domestic, Canada, Britain) asking for every service,
- *    package type, and pricing model. Every value that comes back must be in
- *    the matching exported list.
+ * 2. Five real quotes asking for every service, package type, and pricing
+ *    model. Every value that comes back must be in the matching exported list.
+ *    The API returns only the cheapest rate per service and picks price books
+ *    by origin, so some quotes exist only to surface a value the others hide.
  *
  * Exits 0 when everything matches, 1 on drift, 2 when the API could not be
  * reached or blocked the run.
@@ -223,18 +224,35 @@ async function checkReturnedValues() {
         carrierKey: new Set<string>(),
     }
     let rejectedQuotes = 0
-    const quotes = [
+    const quotes: Record<string, unknown>[] = [
         { destinationZip: '90210', mailClassKeys: DOMESTIC },
         { destinationCountryCode: 'CA', mailClassKeys: INTERNATIONAL },
         { destinationCountryCode: 'GB', mailClassKeys: INTERNATIONAL },
+        // West coast origins are priced from `mrc_geo_b`; Ohio gets `mrc_geo_a`.
+        {
+            originZip: '90210',
+            destinationZip: '10001',
+            mailClassKeys: DOMESTIC,
+        },
+        // A flat soft envelope is the cheapest Priority option only at this
+        // size, which is the one place `softpack` shows up.
+        {
+            destinationZip: '33101',
+            mailClassKeys: DOMESTIC,
+            packageTypeKeys: ['SoftEnvelope'],
+            weight: 32,
+            dimensionX: 14,
+            dimensionY: 12,
+            dimensionZ: 2,
+        },
     ]
-    for (const destination of quotes) {
+    for (const quote of quotes) {
         const body = await query({
             originZip: '43081',
             ...PACKAGE,
-            ...destination,
             packageTypeKeys: [...PackageTypes],
             pricingTypes: [...PricingTypes],
+            ...quote,
         })
         const fieldErrors = (body.errors ?? []).filter(
             (e) => e.extensions?.field
